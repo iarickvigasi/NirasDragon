@@ -7,6 +7,7 @@ import {
     getDocs,
     doc,
     setDoc,
+    getDoc,
     query,
     where,
 } from 'firebase/firestore/lite';
@@ -42,6 +43,22 @@ export async function setUser(user) {
     return await setDoc(doc(db, "users", 'profiles'), user, { merge: true });
 }
 
+export async function setUserWisdomCount(userId, count) {
+    return await setDoc(doc(db, "users", `${userId}`), { count });
+}
+
+export async function getUserWisdomCount(userId) {
+    const docSnap = await getDoc(doc(db, "users", `${userId}`));
+    if (docSnap.exists()) {
+        return docSnap.data()
+        console.log("Got wisdom count for :", userId, docSnap.data());
+    } else {
+        // doc.data() will be undefined in this case
+        return { count: 0 }
+        console.log("No such wisdom count for", userId);
+    }
+}
+
 export async function setGrate(grate, userId) {
     return await addDoc(collection(db, "grates"), grate);
 }
@@ -59,4 +76,9 @@ export async function getGrate(userId) {
         docs.push(doc.data());
     });
     return docs;
+}
+
+export async function getGratesCount(userId) {
+    const grates = await getGrate(userId)
+    return grates.length
 }

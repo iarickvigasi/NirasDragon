@@ -1,16 +1,11 @@
 import { Markup, Telegraf } from 'telegraf'
 import { getRandom, logMsg, logOutMsg } from "./utils.js";
-import { getGrate, setGrate, setUser } from "./firebase.js";
+import { getGrate, getGratesCount, getUserWisdomCount, setGrate, setUser, setUserWisdomCount } from "./firebase.js";
 import express from "express";
+import { getWisdom } from "./wisdoms.js";
 
 const BOT_TOKEN = process.env.BOT_TOKEN
 const bot = new Telegraf(BOT_TOKEN)
-
-const SESSION_MODES = {
-    "START": "START",
-    "SET_NAME": "SET_NAME",
-    "IDLE": "IDLE",
-}
 
 function delayReply(ctx, m, time=50) {
     return setTimeout(() => {
@@ -67,6 +62,21 @@ bot.hears(yourNameRegex, ctx => {
     ctx.reply(m, buttons)
 })
 
+const whatYouCanRegex = /Що ти вмієш/i
+bot.hears(whatYouCanRegex, ctx => {
+    logMsg(ctx)
+    const m = `О, як приємно що ти спитала!\n\n`+
+        `🙏 Якщо ти напишеш - Я вдячна за ... \n` +
+        `То так я наберусь досвіду, запамятаю що тобі приносить радість, та зможу тобі сказати нову мудрість. `+
+        `\nЧим більше ти мене годуєш, тим більше мудрості я зможу з тобою розділити ❤️` +
+        `\n\n💭 Щоб запитати про мудрість напиши - Щось мудрe     чи     Скажи мені мудре     загалом потрібно щоб в повідомленні було слово - мудре =D` +
+        '\n\n💕 А ще ти завджи можеш спитати - Як любить мене Ярослав' +
+        `\nІ я радо тобі відповім ❤️\nПамятай, у нас магічний звязок)`
+
+    logOutMsg(ctx, m)
+    ctx.reply(m)
+})
+
 const iAmGratefullRegex = /Я вдячна за/i
 bot.hears(iAmGratefullRegex, ctx => {
 
@@ -77,7 +87,7 @@ bot.hears(iAmGratefullRegex, ctx => {
         'Дякую що не забуваєш дякувати!',
         'Це дуже добре!',
         'Я зростаю!',
-        'Оце так ❤️'
+        'Добре ❤️'
     ]
 
     logMsg(ctx)
@@ -102,7 +112,6 @@ bot.hears(iAmGratefullRegex, ctx => {
     ctx.reply(reply)
 })
 
-
 const getLoveWordsRegex = /любить мене/i
 bot.hears(getLoveWordsRegex, ctx => {
 
@@ -125,6 +134,22 @@ bot.hears(getLoveWordsRegex, ctx => {
     const reply = getRandom(replies)
     logOutMsg(ctx, reply)
     ctx.reply(reply)
+})
+
+const getWisdomWordsRegex = /мудре/i
+bot.hears(getWisdomWordsRegex, async ctx => {
+    const userId = ctx.from.id
+    const gratesCount = await getGratesCount(userId)
+    const {count} = await getUserWisdomCount(userId)
+
+    console.log('Counts', count, gratesCount, count <= gratesCount)
+    const wisdom = count <= gratesCount ? getWisdom(count) : 'Ой ой...Я голодний на твою вдячність! Зможу сказати щось мудре тільки коли мене погодуєш *wink, wink*';
+
+    logMsg(ctx)
+    logOutMsg(ctx, wisdom)
+    ctx.reply(wisdom)
+
+    setUserWisdomCount(userId, count+1)
 })
 
 function sayNextMessage(ctx) {
