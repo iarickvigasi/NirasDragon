@@ -1,6 +1,7 @@
 import { Markup, Telegraf } from 'telegraf'
 import { getRandom, logMsg, logOutMsg } from "./utils.js";
 import { getGrate, setGrate, setUser } from "./firebase.js";
+import express from "express";
 
 const BOT_TOKEN = process.env.BOT_TOKEN
 const bot = new Telegraf(BOT_TOKEN)
@@ -205,3 +206,16 @@ bot.launch()
 // Enable graceful stop
 process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))
+
+
+// Start app for Heroku
+const app = express()
+app.use(express.static('public'))
+app.get('/', function (req, res) {
+    res.send(
+        "<h1>Hello There! You found <a href='https://t.me/niras_dragon_bot'>@niras_dragon_bot</a> backend</h1>"
+    )
+})
+
+// Start server
+app.listen(process.env.PORT || 3000, () => console.log('Server is running...'))
